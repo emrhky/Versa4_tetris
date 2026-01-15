@@ -2,7 +2,7 @@ import document from "document";
 import clock from "clock";
 import * as fs from "fs";
 
-// --- SAAT SİSTEMİ ---
+// --- 1. ÖNCELİKLİ SAAT SİSTEMİ ---
 const clockLabel = document.getElementById("clock-label");
 const menuClock = document.getElementById("menu-clock");
 
@@ -13,11 +13,12 @@ function refreshClock() {
   if (menuClock) menuClock.text = timeStr;
 }
 
+// Saat ayarlarını hemen yap
 clock.granularity = "minutes";
 clock.ontick = () => refreshClock();
 refreshClock();
 
-// --- AYARLAR ---
+// --- 2. OYUN DEĞİŞKENLERİ ---
 const COLS = 10;
 const ROWS = 12;
 const BLOCK_SIZE = 18;
@@ -37,7 +38,7 @@ const SHAPES = [
 let curPiece = null;
 let curPos = { x: 3, y: 0 };
 
-// --- ELEMENTLERİ YÜKLE ---
+// --- 3. ELEMENTLERİ GÜVENLİ YÜKLE ---
 const scoreEl = document.getElementById("score-text");
 const menuContainer = document.getElementById("menu-container");
 const highScoreText = document.getElementById("high-score-text");
@@ -45,11 +46,14 @@ const lastScoreText = document.getElementById("last-score-text");
 const btnStart = document.getElementById("btn-start");
 const btnText = document.getElementById("btn-text");
 
-// Blok Havuzu (TEST İÇİN 30 ADET)
 const blocks = [];
-for (let i = 0; i < 30; i++) {
-  let b = document.getElementById(`b${i}`);
-  if (b) blocks.push(b);
+for (let i = 0; i < 120; i++) {
+  try {
+    let b = document.getElementById(`b${i}`);
+    if (b) blocks.push(b);
+  } catch(e) {
+    // Blok bulunamazsa sessizce devam et
+  }
 }
 
 // Kayıtları Yükle
@@ -65,7 +69,7 @@ if (highScoreText) {
   highScoreText.text = `EN YÜKSEK: ${highScore} ${highScoreDate ? "(" + highScoreDate + ")" : ""}`;
 }
 
-// --- KONTROLLER ---
+// --- 4. OLAY ATAMALARI ---
 const leftBtn = document.getElementById("left");
 const rightBtn = document.getElementById("right");
 const rotateBtn = document.getElementById("rotate");
@@ -75,9 +79,14 @@ if (leftBtn) leftBtn.onclick = () => move(-1);
 if (rightBtn) rightBtn.onclick = () => move(1);
 if (rotateBtn) rotateBtn.onclick = () => rotate();
 if (downBtn) downBtn.onclick = () => drop();
-if (btnStart) btnStart.onclick = () => resetGame();
 
-// --- OYUN MANTIĞI ---
+if (btnStart) {
+  btnStart.onclick = () => {
+    resetGame();
+  };
+}
+
+// --- 5. OYUN MANTIĞI ---
 function newPiece() {
   const shape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
   curPiece = shape;
@@ -149,7 +158,6 @@ function clearLines() {
 }
 
 function draw() {
-  // Sadece 30 blokluk havuzu yönet
   blocks.forEach(b => { b.style.display = "none"; });
   let bIdx = 0;
 
@@ -186,7 +194,7 @@ function endGame() {
     highScoreDate = ("0" + now.getDate()).slice(-2) + "/" + ("0" + (now.getMonth() + 1)).slice(-2) + "/" + now.getFullYear();
     try { fs.writeFileSync(HIGH_SCORE_FILE, { score: highScore, date: highScoreDate }, "json"); } catch (e) {}
   }
-  updateHighScoreDisplay();
+  if (highScoreText) highScoreText.text = `EN YÜKSEK: ${highScore} (${highScoreDate})`;
   if (lastScoreText) {
     lastScoreText.text = "SKORUN: " + score;
     lastScoreText.style.display = "inline";
