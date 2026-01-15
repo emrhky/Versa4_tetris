@@ -36,14 +36,15 @@ const SHAPES = [
 let curPiece = null;
 let curPos = { x: 3, y: 0 };
 
-// --- ELEMENTLER ---
+// --- UI ELEMENTLERİ ---
 const scoreEl = document.getElementById("score-text");
 const menuContainer = document.getElementById("menu-container");
 const highScoreText = document.getElementById("high-score-text");
 const lastScoreText = document.getElementById("last-score-text");
-const btnStart = document.getElementById("btn-start");
 const btnText = document.getElementById("btn-text");
-const controlsGroup = document.getElementById("game-controls"); // YENİ
+const controlsGroup = document.getElementById("game-controls");
+// KRİTİK DEĞİŞİKLİK: Tıklama alanını al
+const hitArea = document.getElementById("btn-hit-area");
 
 const blocks = [];
 for (let i = 0; i < 120; i++) {
@@ -66,7 +67,7 @@ if (highScoreText) {
   highScoreText.text = `EN YÜKSEK: ${highScore} ${highScoreDate ? "(" + highScoreDate + ")" : ""}`;
 }
 
-// --- KONTROLLER ---
+// --- OLAYLAR ---
 const safeClick = (id, fn) => { let el = document.getElementById(id); if(el) el.onclick = fn; };
 
 safeClick("left", () => move(-1));
@@ -74,8 +75,9 @@ safeClick("right", () => move(1));
 safeClick("rotate", () => rotate());
 safeClick("down", () => drop());
 
-if (btnStart) {
-  btnStart.onclick = () => {
+// KRİTİK: Tıklamayı hayalet alana bağla
+if (hitArea) {
+  hitArea.onclick = () => {
     resetGame();
   };
 }
@@ -183,7 +185,7 @@ function draw() {
 function endGame() {
   if (gameLoop) { clearInterval(gameLoop); gameLoop = null; }
   
-  // Kontrolleri gizle (Menüye dönüyoruz)
+  // Kontrolleri gizle
   if (controlsGroup) controlsGroup.style.display = "none";
 
   if (score > highScore) {
@@ -202,7 +204,7 @@ function endGame() {
 }
 
 function resetGame() {
-  // Kontrolleri GÖSTER (Oyun başlıyor)
+  // Kontrolleri aç
   if (controlsGroup) controlsGroup.style.display = "inline";
   
   board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
