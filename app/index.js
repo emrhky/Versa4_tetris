@@ -21,33 +21,36 @@ const SHAPES = [
 let curPiece = null;
 let curPos = { x: 3, y: 0 };
 
-const clockLabel = document.getElementById("clock-label");
-const menuClock = document.getElementById("menu-clock");
-const scoreEl = document.getElementById("score-text");
-const menuContainer = document.getElementById("menu-container");
-const highScoreText = document.getElementById("high-score-text");
-const lastScoreText = document.getElementById("last-score-text");
-const btnStart = document.getElementById("btn-start");
-const btnText = document.getElementById("btn-text");
+// Elemanları Alırken Hata Koruması
+const get = (id) => document.getElementById(id);
 
-// Blokları GÜVENLİ yükle (Çökmeyi önler)
+const clockLabel = get("clock-label");
+const menuClock = get("menu-clock");
+const scoreEl = get("score-text");
+const menuContainer = get("menu-container");
+const highScoreText = get("high-score-text");
+const lastScoreText = get("last-score-text");
+const btnStart = get("btn-start");
+const btnText = get("btn-text");
+
+// Blokları Güvenli Yükle (Eksik blok varsa uygulama ÇÖKMEZ)
 const blocks = [];
 for (let i = 0; i < 120; i++) {
-  let b = document.getElementById(`b${i}`);
+  let b = get(`b${i}`);
   if (b) blocks.push(b);
 }
 
-// SAAT FIX: Başlangıçta saati göster
-function updateTime() {
+// SAAT GÜNCELLEME (Anında ve sürekli)
+function refreshTime() {
   let today = new Date();
-  let timeStr = ("0" + today.getHours()).slice(-2) + ":" + ("0" + today.getMinutes()).slice(-2);
-  if (clockLabel) clockLabel.text = timeStr;
-  if (menuClock) menuClock.text = timeStr;
+  let time = ("0" + today.getHours()).slice(-2) + ":" + ("0" + today.getMinutes()).slice(-2);
+  if (clockLabel) clockLabel.text = time;
+  if (menuClock) menuClock.text = time;
 }
 
 clock.granularity = "minutes";
-clock.ontick = () => updateTime();
-updateTime(); // Hemen çalıştır
+clock.ontick = () => refreshTime();
+refreshTime(); // Başlangıçta zorla çalıştır
 
 // Kayıtları Yükle
 try {
@@ -62,16 +65,13 @@ if (highScoreText) {
   highScoreText.text = `EN YÜKSEK: ${highScore} ${highScoreDate ? "(" + highScoreDate + ")" : ""}`;
 }
 
-// Kontrol Fonksiyonları (Güvenli Atama)
-const leftBtn = document.getElementById("left");
-const rightBtn = document.getElementById("right");
-const rotateBtn = document.getElementById("rotate");
-const downBtn = document.getElementById("down");
+// Olay Atamaları (Null Check ile)
+const safeClick = (id, fn) => { let el = get(id); if(el) el.onclick = fn; };
 
-if (leftBtn) leftBtn.onclick = () => move(-1);
-if (rightBtn) rightBtn.onclick = () => move(1);
-if (rotateBtn) rotateBtn.onclick = () => rotate();
-if (downBtn) downBtn.onclick = () => drop();
+safeClick("left", () => move(-1));
+safeClick("right", () => move(1));
+safeClick("rotate", () => rotate());
+safeClick("down", () => drop());
 if (btnStart) btnStart.onclick = () => resetGame();
 
 function newPiece() {
@@ -104,11 +104,11 @@ function move(dir) {
 }
 
 function rotate() {
-  if (!curPiece) return;
+  if(!curPiece) return;
   const rotated = curPiece[0].map((_, i) => curPiece.map(row => row[i]).reverse());
-  const oldPiece = curPiece;
+  const old = curPiece;
   curPiece = rotated;
-  if (collide()) curPiece = oldPiece;
+  if (collide()) curPiece = old;
   draw();
 }
 
@@ -125,10 +125,8 @@ function drop() {
 
 function merge() {
   curPiece.forEach((row, y) => {
-    row.forEach((value, x) => {
-      if (value && (y + curPos.y) >= 0) {
-        board[y + curPos.y][x + curPos.x] = 1;
-      }
+    row.forEach((val, x) => {
+      if (val && (y + curPos.y) >= 0) board[y + curPos.y][x + curPos.x] = 1;
     });
   });
 }
@@ -136,10 +134,7 @@ function merge() {
 function clearLines() {
   let lines = 0;
   board = board.filter(row => {
-    if (row.every(v => v)) {
-      lines++;
-      return false;
-    }
+    if (row.every(v => v)) { lines++; return false; }
     return true;
   });
   while (board.length < ROWS) board.unshift(Array(COLS).fill(0));
@@ -150,9 +145,11 @@ function clearLines() {
 }
 
 function draw() {
+  // Blokları gizle
   blocks.forEach(b => { b.style.display = "none"; });
   let bIdx = 0;
 
+  // Tahtadaki bloklar
   board.forEach((row, y) => {
     row.forEach((val, x) => {
       if (val && bIdx < blocks.length) {
@@ -164,6 +161,7 @@ function draw() {
     });
   });
 
+  // Aktif parça
   if (curPiece) {
     curPiece.forEach((row, y) => {
       row.forEach((val, x) => {
@@ -186,7 +184,7 @@ function endGame() {
     highScoreDate = ("0" + now.getDate()).slice(-2) + "/" + ("0" + (now.getMonth() + 1)).slice(-2) + "/" + now.getFullYear();
     try { fs.writeFileSync(HIGH_SCORE_FILE, { score: highScore, date: highScoreDate }, "json"); } catch (e) {}
   }
-  if (highScoreText) highScoreText.text = `EN YÜKSEK: ${highScore} (${highScoreDate})`;
+  updateHighScoreDisplay();
   if (lastScoreText) {
     lastScoreText.text = "SKORUN: " + score;
     lastScoreText.style.display = "inline";
@@ -205,5 +203,5 @@ function resetGame() {
   gameLoop = setInterval(drop, 1000);
 }
 
-// Başlangıç durumu
+// İlk çizim
 draw();
