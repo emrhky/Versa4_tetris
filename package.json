@@ -1,0 +1,23 @@
+{
+  "name": "tetris-v1-stable",
+  "version": "1.0.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "@fitbit/sdk": "~6.2.0-pre.1",
+    "@fitbit/sdk-cli": "~1.8.0-pre.10"
+  },
+  "fitbit": {
+    "appUUID": "c7d9e2a1-f8b4-4b4d-9a8c-7f6e5d4c3b2b",
+    "appType": "app",
+    "appDisplayName": "Tetris",
+    "iconFile": "resources/icon.png",
+    "wipeColor": "#94af1c",
+    "requestedPermissions": [],
+    "buildTargets": [
+      "hera",
+      "rhea"
+    ],
+    "defaultLanguage": "en-US"
+  }
+}
