@@ -1,17 +1,9 @@
-.defaultText {
+#clock-label, #score-text {
   fill: #222222;
   font-family: System-Bold;
-  font-weight: bold;
 }
 
-/* Dokunmatik alanların kesinlikle çalışmasını sağlar */
-.touch-zone {
-  pointer-events: all;
-  opacity: 0;
-}
-
-/* Butonun tıklanabilir olmasını garanti eder */
-#btn-start {
-  pointer-events: all;
-  fill: #222222;
+/* Dokunmatik alanlar için kritik */
+rect {
+  pointer-events: visible; 
 }
