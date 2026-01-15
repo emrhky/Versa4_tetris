@@ -1,0 +1,30 @@
+<svg>
+  <rect x="0" y="0" width="100%" height="100%" fill="#94af1c" />
+  
+  <text id="clock-label" x="12%" y="32" fill="#222222" font-size="24" font-family="System-Bold" text-anchor="start">00:00</text>
+  <text id="score-text" x="88%" y="32" fill="#222222" font-size="24" font-family="System-Bold" text-anchor="end" text-length="20">SKOR: 0</text>
+
+  <rect x="75" y="40" width="184" height="280" fill="none" stroke="#222222" stroke-width="2" />
+
+  <g id="game-board" transform="translate(80, 45)">
+    <rect id="b0" x="0" y="0" width="15" height="15" fill="#222222" display="none" />
+    </g>
+
+  <rect id="rotate" x="25%" y="40" width="50%" height="75%" fill="white" opacity="0" pointer-events="all" />
+  <rect id="left" x="0" y="0" width="25%" height="100%" fill="white" opacity="0" pointer-events="all" />
+  <rect id="right" x="75%" y="0" width="25%" height="100%" fill="white" opacity="0" pointer-events="all" />
+  <rect id="down" x="25%" y="75%" width="50%" height="25%" fill="white" opacity="0" pointer-events="all" />
+
+  <g id="menu-container" display="inline">
+    <rect x="0" y="0" width="100%" height="100%" fill="#94af1c" />
+    <text id="menu-clock" x="12%" y="32" fill="#222222" font-size="24" font-family="System-Bold" text-anchor="start">00:00</text>
+    
+    <text x="50%" y="125" fill="#222222" font-size="44" font-family="System-Bold" text-anchor="middle">TETRIS</text>
+
+    <text id="high-score-text" x="50%" y="185" fill="#222222" font-size="22" text-anchor="middle" text-length="40">EN YÜKSEK: 0</text>
+    <text id="last-score-text" x="50%" y="215" fill="#222222" font-size="22" text-anchor="middle" display="none" text-length="40">SKORUN: 0</text>
+    
+    <rect id="btn-start" x="15%" y="245" width="70%" height="55" rx="15" fill="#222222" pointer-events="all" />
+    <text id="btn-text" x="50%" y="282" fill="#94af1c" font-size="26" font-family="System-Bold" text-anchor="middle" pointer-events="none">YENİ OYUN</text>
+  </g>
+</svg>
