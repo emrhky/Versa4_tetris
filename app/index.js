@@ -2,6 +2,22 @@ import document from "document";
 import clock from "clock";
 import * as fs from "fs";
 
+// --- 1. SAAT SİSTEMİ (EN BAŞTA OLMALI) ---
+const clockLabel = document.getElementById("clock-label");
+const menuClock = document.getElementById("menu-clock");
+
+function updateClock() {
+  let today = new Date();
+  let timeStr = ("0" + today.getHours()).slice(-2) + ":" + ("0" + today.getMinutes()).slice(-2);
+  if (clockLabel) clockLabel.text = timeStr;
+  if (menuClock) menuClock.text = timeStr;
+}
+
+clock.granularity = "minutes";
+clock.ontick = () => updateClock();
+updateClock(); // ANINDA GÜNCELLE
+
+// --- 2. DEĞİŞKENLER VE AYARLAR ---
 const COLS = 10;
 const ROWS = 12;
 const BLOCK_SIZE = 18;
@@ -21,38 +37,24 @@ const SHAPES = [
 let curPiece = null;
 let curPos = { x: 3, y: 0 };
 
-// Elemanları Alırken Hata Koruması
-const get = (id) => document.getElementById(id);
+// --- 3. ELEMENTLERİ GÜVENLİ YÜKLE ---
+const scoreEl = document.getElementById("score-text");
+const menuContainer = document.getElementById("menu-container");
+const highScoreText = document.getElementById("high-score-text");
+const lastScoreText = document.getElementById("last-score-text");
+const btnStart = document.getElementById("btn-start");
+const btnText = document.getElementById("btn-text");
 
-const clockLabel = get("clock-label");
-const menuClock = get("menu-clock");
-const scoreEl = get("score-text");
-const menuContainer = get("menu-container");
-const highScoreText = get("high-score-text");
-const lastScoreText = get("last-score-text");
-const btnStart = get("btn-start");
-const btnText = get("btn-text");
-
-// Blokları Güvenli Yükle (Eksik blok varsa uygulama ÇÖKMEZ)
+// Blok Havuzu
 const blocks = [];
 for (let i = 0; i < 120; i++) {
-  let b = get(`b${i}`);
-  if (b) blocks.push(b);
+  try {
+    let b = document.getElementById(`b${i}`);
+    if (b) blocks.push(b);
+  } catch(e) {}
 }
 
-// SAAT GÜNCELLEME (Anında ve sürekli)
-function refreshTime() {
-  let today = new Date();
-  let time = ("0" + today.getHours()).slice(-2) + ":" + ("0" + today.getMinutes()).slice(-2);
-  if (clockLabel) clockLabel.text = time;
-  if (menuClock) menuClock.text = time;
-}
-
-clock.granularity = "minutes";
-clock.ontick = () => refreshTime();
-refreshTime(); // Başlangıçta zorla çalıştır
-
-// Kayıtları Yükle
+// Kayıtlı Skoru Yükle
 try {
   if (fs.existsSync(HIGH_SCORE_FILE)) {
     const data = fs.readFileSync(HIGH_SCORE_FILE, "json");
@@ -65,15 +67,24 @@ if (highScoreText) {
   highScoreText.text = `EN YÜKSEK: ${highScore} ${highScoreDate ? "(" + highScoreDate + ")" : ""}`;
 }
 
-// Olay Atamaları (Null Check ile)
-const safeClick = (id, fn) => { let el = get(id); if(el) el.onclick = fn; };
+// --- 4. KONTROLLER VE OLAYLAR ---
+const leftBtn = document.getElementById("left");
+const rightBtn = document.getElementById("right");
+const rotateBtn = document.getElementById("rotate");
+const downBtn = document.getElementById("down");
 
-safeClick("left", () => move(-1));
-safeClick("right", () => move(1));
-safeClick("rotate", () => rotate());
-safeClick("down", () => drop());
-if (btnStart) btnStart.onclick = () => resetGame();
+if (leftBtn) leftBtn.onclick = () => move(-1);
+if (rightBtn) rightBtn.onclick = () => move(1);
+if (rotateBtn) rotateBtn.onclick = () => rotate();
+if (downBtn) downBtn.onclick = () => drop();
 
+if (btnStart) {
+  btnStart.onclick = () => {
+    resetGame();
+  };
+}
+
+// --- 5. OYUN MANTIĞI ---
 function newPiece() {
   const shape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
   curPiece = shape;
@@ -104,7 +115,7 @@ function move(dir) {
 }
 
 function rotate() {
-  if(!curPiece) return;
+  if (!curPiece) return;
   const rotated = curPiece[0].map((_, i) => curPiece.map(row => row[i]).reverse());
   const old = curPiece;
   curPiece = rotated;
@@ -149,7 +160,7 @@ function draw() {
   blocks.forEach(b => { b.style.display = "none"; });
   let bIdx = 0;
 
-  // Tahtadaki bloklar
+  // Tahta
   board.forEach((row, y) => {
     row.forEach((val, x) => {
       if (val && bIdx < blocks.length) {
@@ -161,7 +172,7 @@ function draw() {
     });
   });
 
-  // Aktif parça
+  // Parça
   if (curPiece) {
     curPiece.forEach((row, y) => {
       row.forEach((val, x) => {
@@ -184,7 +195,7 @@ function endGame() {
     highScoreDate = ("0" + now.getDate()).slice(-2) + "/" + ("0" + (now.getMonth() + 1)).slice(-2) + "/" + now.getFullYear();
     try { fs.writeFileSync(HIGH_SCORE_FILE, { score: highScore, date: highScoreDate }, "json"); } catch (e) {}
   }
-  updateHighScoreDisplay();
+  if (highScoreText) highScoreText.text = `EN YÜKSEK: ${highScore} (${highScoreDate})`;
   if (lastScoreText) {
     lastScoreText.text = "SKORUN: " + score;
     lastScoreText.style.display = "inline";
@@ -203,5 +214,5 @@ function resetGame() {
   gameLoop = setInterval(drop, 1000);
 }
 
-// İlk çizim
+// Başlangıç durumu
 draw();
