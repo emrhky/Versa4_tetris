@@ -18,17 +18,16 @@ clock.granularity = "minutes";
 clock.ontick = () => refreshClock();
 refreshClock();
 
-// --- AYARLAR ---
+// --------------------------------
+//       TETRIS AYARLARI
+// --------------------------------
 const COLS = 10;
 const ROWS = 12;
 
-// Tahtayı oluştur
 let board = [];
 for (let r = 0; r < ROWS; r++) {
   let row = [];
-  for (let c = 0; c < COLS; c++) {
-    row.push(0);
-  }
+  for (let c = 0; c < COLS; c++) row.push(0);
   board.push(row);
 }
 
@@ -37,13 +36,13 @@ let gameLoop = null;
 
 // Şekiller
 const SHAPES = [
-  [ [1, 1, 1, 1] ],                  // I
-  [ [1, 0, 0], [1, 1, 1] ],          // J
-  [ [0, 0, 1], [1, 1, 1] ],          // L
-  [ [1, 1], [1, 1] ],                // O
-  [ [0, 1, 1], [1, 1, 0] ],          // S
-  [ [0, 1, 0], [1, 1, 1] ],          // T
-  [ [1, 1, 0], [0, 1, 1] ]           // Z
+  [[1,1,1,1]],                        // I
+  [[1,0,0],[1,1,1]],                  // J
+  [[0,0,1],[1,1,1]],                  // L
+  [[1,1],[1,1]],                      // O
+  [[0,1,1],[1,1,0]],                  // S
+  [[0,1,0],[1,1,1]],                  // T
+  [[1,1,0],[0,1,1]]                   // Z
 ];
 
 let curPiece = null;
@@ -51,56 +50,52 @@ let curPos = { x: 3, y: 0 };
 
 const scoreEl = document.getElementById("score-text");
 
-// Blok Havuzunu Yükle
+// BLOK HAVUZU
 const blocks = [];
-for (let i = 0; i < 120; i++) {
+for (let i = 0; i < 200; i++) {
   let b = document.getElementById(`b${i}`);
   if (b) blocks.push(b);
 }
 
-// --- KONTROLLER ---
+// -------------------------------
+//         KONTROLLER
+// -------------------------------
 function safeClick(id, fn) {
   const el = document.getElementById(id);
   if (el) el.onclick = fn;
 }
 
-safeClick("left", function() { move(-1); });
-safeClick("right", function() { move(1); });
-safeClick("rotate", function() { rotate(); });
-safeClick("down", function() { drop(); });
+safeClick("left", () => move(-1));
+safeClick("right", () => move(1));
+safeClick("rotate", () => rotate());
+safeClick("down", () => drop());
 
-// --- OYUN MANTIĞI ---
+// -------------------------------
+//         OYUN MANTIĞI
+// -------------------------------
 
 function newPiece() {
   const r = Math.floor(Math.random() * SHAPES.length);
-  const shape = SHAPES[r];
-  
-  curPiece = shape;
-  curPos = { x: Math.floor((COLS - shape[0].length) / 2), y: 0 };
-  
+  curPiece = SHAPES[r];
+  curPos = { x: Math.floor((COLS - curPiece[0].length) / 2), y: 0 };
+
   if (collide(curPiece, curPos)) {
     endGame();
+    return;
   }
   draw();
 }
 
-function collide(p, pos) {
-  // Parametre gelmezse mevcut durumu kullan
-  const piece = p || curPiece;
-  const position = pos || curPos;
-  
-  if (!piece) return false;
-
-  for (let y = 0; y < piece.length; y++) {
-    for (let x = 0; x < piece[y].length; x++) {
-      // Eğer blok doluysa (1 ise)
+function collide(piece, pos) {
+  for (let y=0; y<piece.length; y++) {
+    for (let x=0; x<piece[y].length; x++) {
       if (piece[y][x] !== 0) {
-        let nY = y + position.y;
-        let nX = x + position.x;
-        
-        // Sınır kontrolü
-        if (nX < 0 || nX >= COLS || nY >= ROWS) return true;
-        // Çarpışma kontrolü
+        let nY = pos.y + y;
+        let nX = pos.x + x;
+
+        if (nX < 0 || nX >= COLS) return true;
+        if (nY >= ROWS) return true;
+
         if (nY >= 0 && board[nY][nX] !== 0) return true;
       }
     }
@@ -110,25 +105,24 @@ function collide(p, pos) {
 
 function move(dir) {
   curPos.x += dir;
-  if (collide(curPiece, curPos)) {
-    curPos.x -= dir; // Geri al
-  }
+  if (collide(curPiece, curPos)) curPos.x -= dir;
   draw();
+}
+
+// --- DÜZELTİLMİŞ ROTATE ---
+function rotateMatrix(m) {
+  return m[0].map((_, i) => m.map(row => row[i]).reverse());
 }
 
 function rotate() {
   if (!curPiece) return;
-  
-  // Matris döndürme
-  const rotated = curPiece[0].map((val, index) => 
-    curPiece.map(row => row[index]).reverse()
-  );
-  
-  const oldPiece = curPiece;
+
+  const rotated = rotateMatrix(curPiece);
+  const old = curPiece;
+
   curPiece = rotated;
-  
   if (collide(curPiece, curPos)) {
-    curPiece = oldPiece; // Çarpıyorsa iptal et
+    curPiece = old; // Geri al
   }
   draw();
 }
@@ -136,7 +130,7 @@ function rotate() {
 function drop() {
   curPos.y++;
   if (collide(curPiece, curPos)) {
-    curPos.y--; // Bir yukarı al
+    curPos.y--;
     merge();
     clearLines();
     newPiece();
@@ -145,83 +139,84 @@ function drop() {
 }
 
 function merge() {
-  for(let y=0; y < curPiece.length; y++) {
-    for(let x=0; x < curPiece[y].length; x++) {
+  for (let y=0; y<curPiece.length; y++) {
+    for (let x=0; x<curPiece[y].length; x++) {
       if (curPiece[y][x] !== 0) {
-        let boardY = y + curPos.y;
-        let boardX = x + curPos.x;
-        if (boardY >= 0 && boardY < ROWS && boardX >= 0 && boardX < COLS) {
-          board[boardY][boardX] = 1;
+        let by = curPos.y + y;
+        let bx = curPos.x + x;
+
+        if (by >= 0 && by < ROWS && bx >= 0 && bx < COLS) {
+          board[by][bx] = 1;
         }
       }
     }
   }
 }
 
-// [DÜZELTME] Hataya sebep olan fonksiyon tamamen basitleştirildi
+// --- DÜZELTİLMİŞ SATIR TEMİZLEME ---
 function clearLines() {
-  let linesCleared = 0;
-  let nextBoard = [];
+  let next = [];
+  let cleared = 0;
 
-  // 1. Dolu olmayan satırları bul ve yeni tahtaya ekle
   for (let r = 0; r < ROWS; r++) {
-    let isFull = true;
-    for (let c = 0; c < COLS; c++) {
-      if (board[r][c] === 0) {
-        isFull = false;
-        break;
-      }
-    }
-    
-    // Eğer satır tamamen dolu DEĞİLSE, onu koru
-    if (!isFull) {
-      nextBoard.push(board[r]);
+    if (board[r].every(v => v === 1)) {
+      cleared++;
     } else {
-      linesCleared++;
+      next.push(board[r]);
     }
   }
 
-  // 2. Eksik kalan kısımları üstten boş satırla doldur
-  while (nextBoard.length < ROWS) {
-    let emptyRow = [];
-    for(let c=0; c<COLS; c++) {
-      emptyRow.push(0);
-    }
-    nextBoard.unshift(emptyRow); // En başa ekle
-  }
+  while (next.length < ROWS) next.unshift(new Array(COLS).fill(0));
 
-  // 3. Tahtayı güncelle
-  board = nextBoard;
-  
-  if (linesCleared > 0) {
-    score += linesCleared * 10;
-    if (scoreEl) scoreEl.text = "SKOR: " + score;
+  board = next;
+
+  if (cleared > 0) {
+    score += cleared * 10;
+    scoreEl.text = "SKOR: " + score;
   }
 }
 
+// -------------------------------
+//            ÇİZİM
+// -------------------------------
 function draw() {
-  // Önce tüm blokları gizle
-  for(let i=0; i<blocks.length; i++) {
-    if(blocks[i]) blocks[i].style.display = "none";
-  }
-  
-  let bIdx = 0;
+  for (let b of blocks) b.style.display = "none";
 
-  // 1. Sabit Tahtayı Çiz
-  for (let y = 0; y < ROWS; y++) {
-    for (let x = 0; x < COLS; x++) {
-      if (board[y][x] !== 0) {
-        if (bIdx < blocks.length) {
-          let b = blocks[bIdx];
-          b.x = x * 18;
-          b.y = y * 18;
-          b.style.display = "inline";
-          bIdx++;
+  let i = 0;
+
+  // Sabit bloklar
+  for (let y=0; y<ROWS; y++) {
+    for (let x=0; x<COLS; x++) {
+      if (board[y][x] !== 0 && i < blocks.length) {
+        blocks[i].x = x * 16;
+        blocks[i].y = y * 16;
+        blocks[i].style.display = "inline";
+        i++;
+      }
+    }
+  }
+
+  // Hareketli parça
+  if (curPiece) {
+    for (let y=0; y<curPiece.length; y++) {
+      for (let x=0; x<curPiece[y].length; x++) {
+        if (curPiece[y][x] !== 0 && i < blocks.length) {
+          blocks[i].x = (curPos.x + x) * 16;
+          blocks[i].y = (curPos.y + y) * 16;
+          blocks[i].style.display = "inline";
+          i++;
         }
       }
     }
   }
+}
 
-  // 2. Hareketli Parçayı Çiz
-  if (curPiece) {
-    for (let y = 0; y < curPiece.length
+function endGame() {
+  console.log("GAME OVER");
+  clearInterval(gameLoop);
+}
+
+// OYUN BAŞLAT
+newPiece();
+
+gameLoop = setInterval(() => drop(), 700);
