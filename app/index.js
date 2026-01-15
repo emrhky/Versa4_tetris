@@ -30,15 +30,15 @@ const lastScoreText = document.getElementById("last-score-text");
 const btnStart = document.getElementById("btn-start");
 const btnText = document.getElementById("btn-text");
 
-// Blok Havuzu (Güvenli Yükleme)
+// Blokları GÜVENLİ yükle (Çökmeyi önler)
 const blocks = [];
 for (let i = 0; i < 120; i++) {
   let b = document.getElementById(`b${i}`);
   if (b) blocks.push(b);
 }
 
-// SAAT DÜZELTMESİ: Fonksiyonu ayırdım ve anında çağırdım
-function refreshClock() {
+// SAAT FIX: Başlangıçta saati göster
+function updateTime() {
   let today = new Date();
   let timeStr = ("0" + today.getHours()).slice(-2) + ":" + ("0" + today.getMinutes()).slice(-2);
   if (clockLabel) clockLabel.text = timeStr;
@@ -46,10 +46,10 @@ function refreshClock() {
 }
 
 clock.granularity = "minutes";
-clock.ontick = () => refreshClock();
-refreshClock(); // İlk açılışta anında güncelle
+clock.ontick = () => updateTime();
+updateTime(); // Hemen çalıştır
 
-// Yüksek Skoru Yükle
+// Kayıtları Yükle
 try {
   if (fs.existsSync(HIGH_SCORE_FILE)) {
     const data = fs.readFileSync(HIGH_SCORE_FILE, "json");
@@ -58,16 +58,20 @@ try {
   }
 } catch (e) {}
 
-function updateHighScoreDisplay() {
-  if (highScoreText) highScoreText.text = `EN YÜKSEK: ${highScore} ${highScoreDate ? "(" + highScoreDate + ")" : ""}`;
+if (highScoreText) {
+  highScoreText.text = `EN YÜKSEK: ${highScore} ${highScoreDate ? "(" + highScoreDate + ")" : ""}`;
 }
-updateHighScoreDisplay();
 
-// Kontroller
-document.getElementById("left").onclick = () => move(-1);
-document.getElementById("right").onclick = () => move(1);
-document.getElementById("rotate").onclick = () => rotate();
-document.getElementById("down").onclick = () => drop();
+// Kontrol Fonksiyonları (Güvenli Atama)
+const leftBtn = document.getElementById("left");
+const rightBtn = document.getElementById("right");
+const rotateBtn = document.getElementById("rotate");
+const downBtn = document.getElementById("down");
+
+if (leftBtn) leftBtn.onclick = () => move(-1);
+if (rightBtn) rightBtn.onclick = () => move(1);
+if (rotateBtn) rotateBtn.onclick = () => rotate();
+if (downBtn) downBtn.onclick = () => drop();
 if (btnStart) btnStart.onclick = () => resetGame();
 
 function newPiece() {
@@ -85,7 +89,8 @@ function collide(p = curPiece, pos = curPos) {
       if (p[y][x]) {
         let nY = y + pos.y;
         let nX = x + pos.x;
-        if (nX < 0 || nX >= COLS || nY >= ROWS || (nY >= 0 && board[nY][nX])) return true;
+        if (nX < 0 || nX >= COLS || nY >= ROWS) return true;
+        if (nY >= 0 && board[nY][nX]) return true;
       }
     }
   }
@@ -99,10 +104,11 @@ function move(dir) {
 }
 
 function rotate() {
+  if (!curPiece) return;
   const rotated = curPiece[0].map((_, i) => curPiece.map(row => row[i]).reverse());
-  const old = curPiece;
+  const oldPiece = curPiece;
   curPiece = rotated;
-  if (collide()) curPiece = old;
+  if (collide()) curPiece = oldPiece;
   draw();
 }
 
@@ -119,8 +125,10 @@ function drop() {
 
 function merge() {
   curPiece.forEach((row, y) => {
-    row.forEach((val, x) => {
-      if (val && (y + curPos.y) >= 0) board[y + curPos.y][x + curPos.x] = 1;
+    row.forEach((value, x) => {
+      if (value && (y + curPos.y) >= 0) {
+        board[y + curPos.y][x + curPos.x] = 1;
+      }
     });
   });
 }
@@ -128,7 +136,10 @@ function merge() {
 function clearLines() {
   let lines = 0;
   board = board.filter(row => {
-    if (row.every(v => v)) { lines++; return false; }
+    if (row.every(v => v)) {
+      lines++;
+      return false;
+    }
     return true;
   });
   while (board.length < ROWS) board.unshift(Array(COLS).fill(0));
@@ -139,14 +150,14 @@ function clearLines() {
 }
 
 function draw() {
-  blocks.forEach(b => b.style.display = "none");
+  blocks.forEach(b => { b.style.display = "none"; });
   let bIdx = 0;
 
   board.forEach((row, y) => {
     row.forEach((val, x) => {
       if (val && bIdx < blocks.length) {
-        blocks[bIdx].x = x * BLOCK_SIZE;
-        blocks[bIdx].y = y * BLOCK_SIZE;
+        blocks[bIdx].x = x * 18;
+        blocks[bIdx].y = y * 18;
         blocks[bIdx].style.display = "inline";
         bIdx++;
       }
@@ -157,8 +168,8 @@ function draw() {
     curPiece.forEach((row, y) => {
       row.forEach((val, x) => {
         if (val && bIdx < blocks.length) {
-          blocks[bIdx].x = (x + curPos.x) * BLOCK_SIZE;
-          blocks[bIdx].y = (y + curPos.y) * BLOCK_SIZE;
+          blocks[bIdx].x = (x + curPos.x) * 18;
+          blocks[bIdx].y = (y + curPos.y) * 18;
           blocks[bIdx].style.display = "inline";
           bIdx++;
         }
@@ -175,12 +186,12 @@ function endGame() {
     highScoreDate = ("0" + now.getDate()).slice(-2) + "/" + ("0" + (now.getMonth() + 1)).slice(-2) + "/" + now.getFullYear();
     try { fs.writeFileSync(HIGH_SCORE_FILE, { score: highScore, date: highScoreDate }, "json"); } catch (e) {}
   }
-  updateHighScoreDisplay();
+  if (highScoreText) highScoreText.text = `EN YÜKSEK: ${highScore} (${highScoreDate})`;
   if (lastScoreText) {
     lastScoreText.text = "SKORUN: " + score;
     lastScoreText.style.display = "inline";
   }
-  if (btnText) btnText.text = "YENİDEN DENE";
+  if (btnText) btnText.text = "YENİ OYUN";
   if (menuContainer) menuContainer.style.display = "inline";
 }
 
@@ -194,5 +205,5 @@ function resetGame() {
   gameLoop = setInterval(drop, 1000);
 }
 
-// Başlangıç ekranı çizimi
+// Başlangıç durumu
 draw();
