@@ -2,7 +2,7 @@ import document from "document";
 import clock from "clock";
 import * as fs from "fs";
 
-// --- 1. ÖNCELİKLİ SAAT SİSTEMİ ---
+// --- SAAT ---
 const clockLabel = document.getElementById("clock-label");
 const menuClock = document.getElementById("menu-clock");
 
@@ -12,13 +12,11 @@ function refreshClock() {
   if (clockLabel) clockLabel.text = timeStr;
   if (menuClock) menuClock.text = timeStr;
 }
-
-// Saat ayarlarını hemen yap
 clock.granularity = "minutes";
 clock.ontick = () => refreshClock();
 refreshClock();
 
-// --- 2. OYUN DEĞİŞKENLERİ ---
+// --- AYARLAR ---
 const COLS = 10;
 const ROWS = 12;
 const BLOCK_SIZE = 18;
@@ -38,25 +36,24 @@ const SHAPES = [
 let curPiece = null;
 let curPos = { x: 3, y: 0 };
 
-// --- 3. ELEMENTLERİ GÜVENLİ YÜKLE ---
+// --- ELEMENTLER ---
 const scoreEl = document.getElementById("score-text");
 const menuContainer = document.getElementById("menu-container");
 const highScoreText = document.getElementById("high-score-text");
 const lastScoreText = document.getElementById("last-score-text");
 const btnStart = document.getElementById("btn-start");
 const btnText = document.getElementById("btn-text");
+const controlsGroup = document.getElementById("game-controls"); // YENİ
 
 const blocks = [];
 for (let i = 0; i < 120; i++) {
   try {
     let b = document.getElementById(`b${i}`);
     if (b) blocks.push(b);
-  } catch(e) {
-    // Blok bulunamazsa sessizce devam et
-  }
+  } catch(e) {}
 }
 
-// Kayıtları Yükle
+// Skoru Yükle
 try {
   if (fs.existsSync(HIGH_SCORE_FILE)) {
     const data = fs.readFileSync(HIGH_SCORE_FILE, "json");
@@ -69,16 +66,13 @@ if (highScoreText) {
   highScoreText.text = `EN YÜKSEK: ${highScore} ${highScoreDate ? "(" + highScoreDate + ")" : ""}`;
 }
 
-// --- 4. OLAY ATAMALARI ---
-const leftBtn = document.getElementById("left");
-const rightBtn = document.getElementById("right");
-const rotateBtn = document.getElementById("rotate");
-const downBtn = document.getElementById("down");
+// --- KONTROLLER ---
+const safeClick = (id, fn) => { let el = document.getElementById(id); if(el) el.onclick = fn; };
 
-if (leftBtn) leftBtn.onclick = () => move(-1);
-if (rightBtn) rightBtn.onclick = () => move(1);
-if (rotateBtn) rotateBtn.onclick = () => rotate();
-if (downBtn) downBtn.onclick = () => drop();
+safeClick("left", () => move(-1));
+safeClick("right", () => move(1));
+safeClick("rotate", () => rotate());
+safeClick("down", () => drop());
 
 if (btnStart) {
   btnStart.onclick = () => {
@@ -86,7 +80,7 @@ if (btnStart) {
   };
 }
 
-// --- 5. OYUN MANTIĞI ---
+// --- OYUN MANTIĞI ---
 function newPiece() {
   const shape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
   curPiece = shape;
@@ -117,7 +111,7 @@ function move(dir) {
 }
 
 function rotate() {
-  if (!curPiece) return;
+  if(!curPiece) return;
   const rotated = curPiece[0].map((_, i) => curPiece.map(row => row[i]).reverse());
   const old = curPiece;
   curPiece = rotated;
@@ -188,6 +182,10 @@ function draw() {
 
 function endGame() {
   if (gameLoop) { clearInterval(gameLoop); gameLoop = null; }
+  
+  // Kontrolleri gizle (Menüye dönüyoruz)
+  if (controlsGroup) controlsGroup.style.display = "none";
+
   if (score > highScore) {
     highScore = score;
     const now = new Date();
@@ -204,6 +202,9 @@ function endGame() {
 }
 
 function resetGame() {
+  // Kontrolleri GÖSTER (Oyun başlıyor)
+  if (controlsGroup) controlsGroup.style.display = "inline";
+  
   board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
   score = 0;
   if (scoreEl) scoreEl.text = "SKOR: 0";
@@ -213,5 +214,5 @@ function resetGame() {
   gameLoop = setInterval(drop, 1000);
 }
 
-// İlk çizim
+// Başlangıç durumu
 draw();
