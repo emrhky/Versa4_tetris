@@ -1,0 +1,29 @@
+name: Fitbit Tetris Build SDK 6.2
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '16' # SDK 6.2-pre ve Versa 4 araçları için en kararlı sürüm
+
+      - name: Install Dependencies
+        run: |
+          npm install --ignore-scripts --legacy-peer-deps
+        # --legacy-peer-deps: SDK sürüm çakışmalarını önlemek için kritik
+
+      - name: Build App
+        run: npx fitbit-build
+        # package.json içindeki 'hera' ve 'rhea' hedeflerini derler
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tetris-build-output
+          path: build/*.fba
